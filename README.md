@@ -89,10 +89,72 @@ Then import it in `js/app.js`:
 import './widgets/mywidget.js';
 ```
 
+## Backend (Optional)
+
+The optional Golang backend provides user authentication, cloud sync, and real-time WebSocket updates.
+
+### API Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/register` | POST | None | Register with email/password |
+| `/api/login` | POST | None | Login, returns JWT token |
+| `/api/sync` | GET | JWT | Get saved layout & widget data |
+| `/api/sync` | POST | JWT | Save layout & widget data |
+| `/api/user` | DELETE | JWT | Delete account and all data |
+| `/ws` | GET | JWT (query) | WebSocket for realtime sync |
+| `/api/health` | GET | None | Health check |
+
+### Running with Docker
+
+```bash
+docker-compose up -d
+# Backend at http://localhost:8080
+# PostgreSQL at localhost:5432
+```
+
+### Running without Docker
+
+```bash
+# Start PostgreSQL and create database
+createdb dashboard
+
+# Run backend
+cd backend
+export DATABASE_URL="postgres://user:pass@localhost:5432/dashboard?sslmode=disable"
+export JWT_SECRET="your-secret-key"
+go run cmd/server/main.go
+```
+
+### Backend Architecture
+
+```
+backend/
+  cmd/server/main.go       - Entry point, router setup
+  internal/
+    auth/jwt.go            - JWT generation & validation
+    handler/               - HTTP handlers (auth, sync, user, ws)
+    middleware/             - Auth, CORS, rate limiting
+    model/                 - User & sync data models
+    repository/            - Database queries (user_repo, data_repo)
+    service/websocket.go   - WebSocket hub & client management
+  pkg/db/db.go             - PostgreSQL connection & migration
+  Dockerfile               - Multi-stage Docker build
+  config.yaml              - Configuration
+```
+
 ## Tech Stack
 
+### Frontend
 - **HTML5** + **TailwindCSS** (CDN)
 - **Vanilla JavaScript** (ES Modules)
 - **SortableJS** for drag-and-drop
 - **Web Crypto API** for encryption
 - **localStorage** for persistence
+
+### Backend
+- **Go 1.22+** with **chi** router
+- **PostgreSQL 15+** with **sqlx**
+- **JWT** (HMAC-SHA256) authentication
+- **gorilla/websocket** for realtime sync
+- **Docker** + **docker-compose**

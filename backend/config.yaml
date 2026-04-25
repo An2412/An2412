@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+    - "*"
+
+database:
+  url: "postgres://dashboard:dashboard@localhost:5432/dashboard?sslmode=disable"
+
+jwt:
+  secret: "change-me-in-production-super-secret-key-2024"
+  expiry_hours: 72
+
+rate_limit:
+  requests_per_minute: 100
+
+encryption:
+  enabled: false
+  key: "change-me-32-byte-encryption-key!"
