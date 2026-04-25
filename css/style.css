@@ -13,6 +13,16 @@
   --border: rgba(0, 0, 0, 0.1);
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   --shadow-hover: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+  --ease-spring: cubic-bezier(0.25, 1.2, 0.5, 1);
+  --ease-smooth: cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  --gx: 50%;
+  --gy: 50%;
+  --grad-light-1: #dbeafe;
+  --grad-light-2: #ede9fe;
+  --grad-light-3: #fce7f3;
+  --grad-dark-1: #1e3a5f;
+  --grad-dark-2: #2d1b69;
+  --grad-dark-3: #4a1942;
 }
 
 .dark {
@@ -35,7 +45,20 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* A1: Dynamic gradient background */
+body.dynamic-gradient {
+  background: radial-gradient(ellipse at var(--gx) var(--gy), var(--grad-light-1), var(--grad-light-2), var(--grad-light-3), var(--bg-body)) !important;
+  background-size: 200% 200%;
+}
+.dark body.dynamic-gradient,
+body.dynamic-gradient:is(.dark *) {
+  background: radial-gradient(ellipse at var(--gx) var(--gy), var(--grad-dark-1), var(--grad-dark-2), var(--grad-dark-3), var(--bg-body)) !important;
+}
+html.dark body.dynamic-gradient {
+  background: radial-gradient(ellipse at var(--gx) var(--gy), var(--grad-dark-1), var(--grad-dark-2), var(--grad-dark-3), #0f172a) !important;
 }
 
 /* ===== Dashboard Grid ===== */
@@ -57,31 +80,47 @@ body {
 }
 
 /* ===== Widget Card ===== */
+/* A2: Premium widget hover & click effects */
 .widget {
   background: var(--bg-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
   padding: 1rem;
-  transition: box-shadow 0.2s ease, transform 0.15s ease, opacity 0.15s ease;
-  animation: widgetFadeIn 0.15s ease forwards;
+  transition: box-shadow 0.25s var(--ease-smooth), transform 0.25s var(--ease-smooth), opacity 0.2s ease, border-color 0.3s ease;
+  animation: widgetFlyIn 0.4s var(--ease-spring) forwards;
   overflow: hidden;
+  position: relative;
 }
 .widget:hover {
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-hover), 0 0 20px rgba(59,130,246,0.08);
+  transform: scale(1.02) translateY(-2px);
+  border-color: var(--accent);
 }
+.widget.expanded {
+  grid-row: span 2;
+  z-index: 10;
+}
+/* C3: Advanced drag-drop ghost effects */
 .widget.sortable-ghost {
-  opacity: 0.4;
-  transform: scale(0.97);
+  opacity: 0.3;
+  transform: scale(0.95);
+  border: 2px dashed var(--accent);
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 .widget.sortable-drag {
-  box-shadow: var(--shadow-hover);
-  transform: scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 30px rgba(59,130,246,0.15);
+  transform: scale(1.04) rotate(1deg);
+  opacity: 0.9;
+  z-index: 100;
 }
+/* A3: Smoke effect when removing */
 .widget.removing {
-  animation: widgetFadeOut 0.15s ease forwards;
+  animation: widgetSmoke 0.35s ease-in forwards;
 }
 
 .widget-header {
@@ -231,19 +270,24 @@ body {
 }
 
 /* ===== Toast ===== */
+/* A5: Bouncy toast animation */
 .toast {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.85rem;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  animation: slideIn 0.2s ease, fadeOut 0.3s ease 1.7s forwards;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  animation: toastBounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), fadeOut 0.3s ease 1.7s forwards;
   max-width: 320px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-.toast-success { background: var(--success); }
-.toast-error { background: var(--danger); }
-.toast-info { background: var(--accent); }
-.toast-warning { background: var(--warning); color: #1e293b; }
+.toast-success { background: linear-gradient(135deg, var(--success), #16a34a); }
+.toast-error { background: linear-gradient(135deg, var(--danger), #dc2626); }
+.toast-info { background: linear-gradient(135deg, var(--accent), #2563eb); }
+.toast-warning { background: linear-gradient(135deg, var(--warning), #d97706); color: #1e293b; }
 
 /* ===== Form Elements ===== */
 .input {
@@ -435,13 +479,17 @@ textarea.input {
 .widget-option-info p { font-size: 0.75rem; color: var(--text-secondary); }
 
 /* ===== Animations ===== */
-@keyframes widgetFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+/* A3: Fly-in animation for adding widgets */
+@keyframes widgetFlyIn {
+  0% { opacity: 0; transform: scale(0.8) translateY(30px); }
+  60% { opacity: 1; transform: scale(1.03) translateY(-5px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
-@keyframes widgetFadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); }
+/* A3: Smoke effect for removing widgets */
+@keyframes widgetSmoke {
+  0% { opacity: 1; transform: scale(1); filter: blur(0); }
+  50% { opacity: 0.5; transform: scale(1.05); filter: blur(4px); }
+  100% { opacity: 0; transform: scale(0.8); filter: blur(12px); }
 }
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -451,9 +499,273 @@ textarea.input {
   from { opacity: 1; }
   to { opacity: 0; }
 }
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+/* A5: Toast bounce animation */
+@keyframes toastBounceIn {
+  0% { transform: translateX(120%); opacity: 0; }
+  50% { transform: translateX(-8%); opacity: 1; }
+  70% { transform: translateX(4%); }
+  100% { transform: translateX(0); opacity: 1; }
+}
+/* A7: Ripple effect */
+@keyframes rippleAnim {
+  to { transform: scale(4); opacity: 0; }
+}
+/* A4: Circle reveal for theme toggle */
+@keyframes circleReveal {
+  from { clip-path: circle(0% at var(--cx) var(--cy)); }
+  to { clip-path: circle(150% at var(--cx) var(--cy)); }
+}
+
+/* ===== A7: Ripple Effect ===== */
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(0);
+  animation: rippleAnim 0.5s ease-out;
+  pointer-events: none;
+}
+
+/* ===== A4: Theme Circle Reveal Overlay ===== */
+.theme-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  animation: circleReveal 0.5s ease-in-out forwards;
+}
+
+/* ===== A6: Confetti Canvas ===== */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* ===== C1: Background Canvas ===== */
+.bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ===== B1: Sidebar ===== */
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 57px);
+}
+#sidebar {
+  width: 200px;
+  min-width: 200px;
+  padding: 1rem 0.75rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--border);
+  transition: width 0.3s var(--ease-smooth), min-width 0.3s var(--ease-smooth), padding 0.3s ease, opacity 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+#sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+.app-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+.sidebar-group-btn:hover {
+  background: var(--bg-body);
+  color: var(--text-primary);
+}
+.sidebar-group-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+.sidebar-group-btn.drag-over {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.02);
+}
+.sidebar-group-icon { font-size: 1rem; }
+.sidebar-group-name { font-weight: 500; }
+
+.sidebar-add-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+  font-family: 'Inter', sans-serif;
+}
+.sidebar-add-group:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* B2: Focus mode */
+body.focus-mode header,
+body.focus-mode #sidebar,
+body.focus-mode .fab,
+body.focus-mode #toolbar {
+  display: none !important;
+}
+body.focus-mode .app-layout {
+  min-height: 100vh;
+}
+body.focus-mode .dashboard-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+body.focus-mode .widget {
+  display: none;
+}
+body.focus-mode .widget.widget-focused {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  min-height: 60vh;
+  animation: widgetFlyIn 0.4s var(--ease-spring);
+}
+.focus-exit-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+.focus-exit-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* B4: Zen mode */
+body.zen-mode header,
+body.zen-mode #sidebar,
+body.zen-mode .fab,
+body.zen-mode #toolbar {
+  display: none !important;
+}
+body.zen-mode .app-layout {
+  min-height: 100vh;
+}
+body.zen-mode .dashboard-grid {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+.zen-hint {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  z-index: 200;
+  transition: opacity 0.5s ease;
+  border: 1px solid var(--border);
+}
+.zen-hint.fade-out {
+  opacity: 0;
+}
+
+/* ===== Toolbar (view modes, snapshots) ===== */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+.toolbar-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-body);
+}
+.toolbar-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 0.25rem;
 }
 
 /* ===== Scrollbar ===== */
@@ -461,3 +773,10 @@ textarea.input {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ===== Mobile responsive for sidebar ===== */
+@media (max-width: 767px) {
+  #sidebar { display: none !important; }
+  .app-layout { display: block; }
+  #toolbar { flex-wrap: nowrap; overflow-x: auto; }
+}

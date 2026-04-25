@@ -1,6 +1,8 @@
 import { registerWidget } from '../core/registry.js';
 import { getWidgetDataById, updateWidgetData } from '../core/state.js';
 import { sanitize } from '../utils/sanitize.js';
+import { fireConfetti } from '../effects/confetti.js';
+import { playComplete } from '../effects/sound.js';
 
 registerWidget('habit', {
   name: 'Habit Tracker',
@@ -59,8 +61,13 @@ function createHabit(container, widgetId) {
         dot.addEventListener('click', () => {
           if (!habit.log) habit.log = [];
           const idx = habit.log.indexOf(day);
-          if (idx >= 0) habit.log.splice(idx, 1);
-          else habit.log.push(day);
+          if (idx >= 0) {
+            habit.log.splice(idx, 1);
+          } else {
+            habit.log.push(day);
+            fireConfetti(dot);
+            playComplete();
+          }
           save();
           render();
         });

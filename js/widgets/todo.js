@@ -1,6 +1,8 @@
 import { registerWidget } from '../core/registry.js';
 import { getWidgetDataById, updateWidgetData } from '../core/state.js';
 import { sanitize } from '../utils/sanitize.js';
+import { fireConfetti } from '../effects/confetti.js';
+import { playComplete } from '../effects/sound.js';
 
 registerWidget('todo', {
   name: 'Todo List',
@@ -32,6 +34,10 @@ function createTodo(container, widgetId) {
       cb.addEventListener('change', () => {
         data.items[idx].done = cb.checked;
         save(data.items);
+        if (cb.checked) {
+          fireConfetti(cb);
+          playComplete();
+        }
         render();
       });
 

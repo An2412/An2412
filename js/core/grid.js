@@ -1,6 +1,7 @@
 import { getLayout, removeWidget, reorderLayout } from './state.js';
 import { getWidgetConfig, widgetRegistry } from './registry.js';
 import { showToast } from '../utils/toast.js';
+import { playDelete } from '../effects/sound.js';
 
 let sortableInstance = null;
 const loadedWidgets = new Set();
@@ -26,13 +27,22 @@ export function renderDashboard() {
     return;
   }
 
-  layout.forEach((item) => {
+  layout.forEach((item, idx) => {
     const cfg = getWidgetConfig(item.type);
     if (!cfg) return;
 
     const card = document.createElement('div');
     card.className = 'widget';
     card.dataset.id = item.id;
+    // Stagger animation for premium feel
+    card.style.animationDelay = `${idx * 0.05}s`;
+    card.style.opacity = '0';
+
+    // Make widget draggable for sidebar group assignment
+    card.draggable = true;
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/widget-id', item.id);
+    });
 
     card.innerHTML = `
       <div class="widget-header">
@@ -76,10 +86,12 @@ function handleRemoveWidget(id, type, card) {
   }
   loadedWidgets.delete(id);
   card.classList.add('removing');
+  playDelete();
+  // A3: Wait for smoke animation (350ms) before removing
   setTimeout(() => {
     removeWidget(id);
     renderDashboard();
-  }, 150);
+  }, 350);
 }
 
 function destroyAllWidgets() {
@@ -99,10 +111,12 @@ function destroyAllWidgets() {
 function initSortable(grid) {
   if (sortableInstance) sortableInstance.destroy();
   sortableInstance = new Sortable(grid, {
-    animation: 150,
+    animation: 200,
     ghostClass: 'sortable-ghost',
     dragClass: 'sortable-drag',
     handle: '.widget-header',
+    forceFallback: true,
+    fallbackClass: 'sortable-drag',
     onEnd: () => {
       const newOrder = Array.from(grid.children)
         .map((el) => el.dataset.id)
