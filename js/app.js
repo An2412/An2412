@@ -40,6 +40,15 @@ import './widgets/habit.js';
 import './widgets/cryptoWidget.js';
 import './widgets/aichat.js';
 
+// BREAKTHROUGH Phase 10
+import { initTilt3D } from './effects/tilt3d.js';
+import { initCommandPalette } from './effects/commandPalette.js';
+import { initAurora, destroyAurora } from './effects/aurora.js';
+import { initCursorTrail, destroyCursorTrail } from './effects/cursorTrail.js';
+import { initRadialMenu } from './effects/radialMenu.js';
+import { initAmbientMode, toggleAmbient } from './effects/ambient.js';
+import { initDock } from './effects/dock.js';
+
 // --- Init ---
 function init() {
   initTheme();
@@ -59,12 +68,34 @@ function init() {
   // Phase 9: Personalization
   initBackground();
 
+  // Phase 10: Breakthrough
+  initTilt3D();
+  initCommandPalette();
+  initRadialMenu();
+  initAmbientMode();
+
+  // Restore cursor trail state
+  const trailEnabled = loadFromLocalStorage('spd_cursor_trail', false);
+  if (trailEnabled) {
+    initCursorTrail();
+    _cursorTrailActive = true;
+  }
+
+  // Restore aurora/mesh background state
+  const bgType = loadFromLocalStorage('spd_bg_type_v2', null);
+  if (bgType === 'aurora' || bgType === 'mesh') {
+    initAurora(bgType);
+  }
+
   renderDashboard();
+  initDock();
   bindEvents();
   updateSoundIcon();
   updateBgButtons();
-  showToast('Dashboard loaded', 'info');
+  showToast('Dashboard loaded — try Ctrl+K', 'info');
 }
+
+let _cursorTrailActive = false;
 
 // --- Event Bindings ---
 function bindEvents() {
@@ -118,12 +149,33 @@ function bindEvents() {
   // Load layout (B5)
   document.getElementById('btn-load-layout')?.addEventListener('click', openLoadLayoutModal);
 
-  // Background options (C1)
-  document.getElementById('btn-bg-gradient')?.addEventListener('click', () => { setBackgroundType('gradient'); updateBgButtons(); showToast('Gradient background', 'info'); });
-  document.getElementById('btn-bg-particles')?.addEventListener('click', () => { setBackgroundType('particles'); updateBgButtons(); showToast('Particle background', 'info'); });
-  document.getElementById('btn-bg-waves')?.addEventListener('click', () => { setBackgroundType('waves'); updateBgButtons(); showToast('Wave background', 'info'); });
+  // Background options (C1 + Phase 10)
+  document.getElementById('btn-bg-gradient')?.addEventListener('click', () => { destroyAurora(); setBackgroundType('gradient'); saveToLocalStorage('spd_bg_type_v2', 'gradient'); updateBgButtons(); showToast('Gradient background', 'info'); });
+  document.getElementById('btn-bg-particles')?.addEventListener('click', () => { destroyAurora(); setBackgroundType('particles'); saveToLocalStorage('spd_bg_type_v2', 'particles'); updateBgButtons(); showToast('Particle background', 'info'); });
+  document.getElementById('btn-bg-waves')?.addEventListener('click', () => { destroyAurora(); setBackgroundType('waves'); saveToLocalStorage('spd_bg_type_v2', 'waves'); updateBgButtons(); showToast('Wave background', 'info'); });
+  document.getElementById('btn-bg-aurora')?.addEventListener('click', () => { setBackgroundType('gradient'); destroyAurora(); initAurora('aurora'); saveToLocalStorage('spd_bg_type_v2', 'aurora'); updateBgButtons(); showToast('Aurora Borealis ✨', 'success'); });
+  document.getElementById('btn-bg-mesh')?.addEventListener('click', () => { setBackgroundType('gradient'); destroyAurora(); initAurora('mesh'); saveToLocalStorage('spd_bg_type_v2', 'mesh'); updateBgButtons(); showToast('Mesh Gradient', 'success'); });
 
-  // Keyboard shortcut
+  // Ambient mode
+  document.getElementById('btn-ambient')?.addEventListener('click', () => {
+    toggleAmbient();
+  });
+
+  // Cursor trail toggle
+  document.getElementById('btn-cursor-trail')?.addEventListener('click', () => {
+    _cursorTrailActive = !_cursorTrailActive;
+    if (_cursorTrailActive) {
+      initCursorTrail();
+      showToast('Cursor trail ON', 'info');
+    } else {
+      destroyCursorTrail();
+      showToast('Cursor trail OFF', 'info');
+    }
+    saveToLocalStorage('spd_cursor_trail', _cursorTrailActive);
+    document.getElementById('btn-cursor-trail')?.classList.toggle('active', _cursorTrailActive);
+  });
+
+  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal();
@@ -143,9 +195,13 @@ function updateSoundIcon() {
 
 function updateBgButtons() {
   const type = getBackgroundType();
-  document.getElementById('btn-bg-gradient')?.classList.toggle('active', type === 'gradient');
+  const v2 = loadFromLocalStorage('spd_bg_type_v2', null);
+  document.getElementById('btn-bg-gradient')?.classList.toggle('active', type === 'gradient' && v2 !== 'aurora' && v2 !== 'mesh');
   document.getElementById('btn-bg-particles')?.classList.toggle('active', type === 'particles');
   document.getElementById('btn-bg-waves')?.classList.toggle('active', type === 'waves');
+  document.getElementById('btn-bg-aurora')?.classList.toggle('active', v2 === 'aurora');
+  document.getElementById('btn-bg-mesh')?.classList.toggle('active', v2 === 'mesh');
+  document.getElementById('btn-cursor-trail')?.classList.toggle('active', _cursorTrailActive);
 }
 
 // --- Add Widget Modal ---
